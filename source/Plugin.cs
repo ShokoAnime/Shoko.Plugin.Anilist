@@ -87,9 +87,8 @@ public class Plugin : IPlugin, IPluginServiceRegistration
         serviceCollection
             .AddHttpClient<AnilistApiClient>((provider, client) =>
             {
-                // The contact URL is read from the plugin's registered info
-                // rather than written here, so it names wherever this build
-                // was published from.
+                // The contact URL is the project's `RepositoryUrl`, read back
+                // from the plugin's registered info.
                 var info = provider.GetRequiredService<IPluginManager>().GetPluginInfo<Plugin>();
                 client.BaseAddress = new Uri(AnilistApiClient.GraphQLUrl);
                 client.DefaultRequestHeaders.UserAgent.Add(

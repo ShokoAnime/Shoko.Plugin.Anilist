@@ -1,8 +1,15 @@
 # Shoko AniList Metadata
 
-Supplies AniList anime metadata to Shoko through the metadata provider
-contract, under the `anilist` source (displayed as "AniList"). It replaces the
-AniList support that used to ship in the server.
+Supplies AniList anime metadata to
+[Shoko Server](https://github.com/ShokoAnime/ShokoServer) through the metadata
+provider contract, under the `anilist` source (displayed as "AniList"). It
+replaces the AniList support that used to ship in the server.
+
+Releases are on the [releases page](https://github.com/ShokoAnime/Shoko.Plugin.Anilist/releases),
+and the manifest listing them is at
+`https://raw.githubusercontent.com/ShokoAnime/Shoko.Plugin.Anilist/metadata/manifest.json`.
+Report problems in the [issue tracker](https://github.com/ShokoAnime/Shoko.Plugin.Anilist/issues)
+or on [Discord](https://discord.gg/vpeHDsg).
 
 `AnilistSources` registers the source, with a short description, from its
 static constructor. `RegisterServices` touches the class, so the source is in
