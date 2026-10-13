@@ -9,6 +9,22 @@
   ],
   "releases": [
     {
+      "version": "1.3.1",
+      "tag": "v1.3.1",
+      "released_at": "2026-10-13T19:32:28.5078192Z",
+      "channel": "Stable",
+      "release_notes": "Rebuilt against the abstractions \u00606.0.0-alpha.104\u0060 release, which moved the configuration UI attributes. Nothing else changed.\n\nThe plugin now lives in the Shoko organisation and can be installed from the Shoko Core Repository.\n\nRequires Shoko Server with abstractions \u00606.0.0-alpha.104\u0060.",
+      "dependencies": [],
+      "archives": [
+        {
+          "runtime": "any",
+          "abstraction": "6.0.0",
+          "url": "https://github.com/ShokoAnime/Shoko.Plugin.Anilist/releases/download/v1.3.1/AniListMetadata-v1.3.1-any.zip",
+          "checksum": "sha256:a9940addb90c793efa1dc9381e3294f0b4636e11c55b94785260a731d88b657f"
+        }
+      ]
+    },
+    {
       "version": "1.3.0",
       "tag": "v1.3.0",
       "released_at": "2026-10-08T23:04:05.8669542Z",
