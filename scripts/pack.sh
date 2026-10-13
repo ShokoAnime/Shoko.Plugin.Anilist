@@ -7,9 +7,8 @@
 # goes under the server's `plugins/` directory. `--zip` also produces
 # `<name>-<version>.zip` of the same, for hand-installing.
 #
-# There is deliberately no publishing step and no host in here: which
-# remote a build is published to is a property of the runner, not of the
-# source tree, so it is passed in rather than written down.
+# There is deliberately no publishing step in here: releases are built
+# and published by .github/workflows/release.yml.
 set -euo pipefail
 
 configuration="Release"
@@ -26,7 +25,7 @@ while [ $# -gt 0 ]; do
         -c|--configuration) configuration="${2:-}"; shift 2 ;;
         -o|--output) output="${2:-}"; shift 2 ;;
         -z|--zip) make_zip=1; shift ;;
-        -h|--help) sed -n '2,12p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '2,11p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) die "unknown argument: $1" ;;
     esac
 done

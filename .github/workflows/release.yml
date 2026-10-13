@@ -1,14 +1,8 @@
 name: Release Build
 
-# The GitHub half of dual hosting (.gitea/workflows/release.yml is the
-# Gitea half). Both fire at the same tag, each builds its own archive and
-# each writes its own manifest naming its own copy, because the two
-# archives are not the same bytes: the assembly embeds the checkout path
-# and the zip embeds the mtimes, so one checksum cannot describe both.
-#
-# The two halves run the same steps in the same order. They differ only
-# where the hosts do: the asset base URL, the token, the uploader, and
-# where the release notes come from.
+# Fires when a release is published: builds the archive at the release's
+# tag, uploads it to the release, and writes the release entry into the
+# manifest on the `metadata` branch.
 
 on:
   release:
@@ -17,9 +11,8 @@ on:
 env:
   # The published manifest lives on a branch of its own and CI writes
   # nowhere else. A manifest committed to `stable` is a bot commit on the
-  # branch people work from; and `stable` is shared with Gitea, so two
-  # CIs writing one file on it would fork the branch across the remotes
-  # and make every later push a non-fast-forward.
+  # branch people work from, which everyone then has to pull before their
+  # next push.
   METADATA_BRANCH: metadata
   # One manifest at the branch root rather than one per release channel.
   # A channel split earns its own path only where high-churn dev releases
@@ -123,9 +116,8 @@ jobs:
       # Everything after the bare `--` is forwarded to MSBuild, and `-p` on
       # its own is shoko-build's prune flag, so the property has to sit past
       # the separator. `RepositoryUrl` is supplied per build rather than set
-      # in the csproj: `stable` is published to both hosts, and the pair of
-      # `github.server_url` and `github.repository` names whichever one is
-      # running the build.
+      # in the csproj: the pair of `github.server_url` and
+      # `github.repository` names the repository running the build.
       - name: Build and package
         working-directory: source
         run: |
@@ -169,9 +161,8 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add "${MANIFEST_PATH}"
           # The only commit and the only push, and it is on the metadata
-          # branch. Nothing lands on a source branch, so `stable` stays
-          # byte-identical on both remotes and nobody has to pull a bot
-          # commit before their next change.
+          # branch. Nothing lands on a source branch, so nobody has to
+          # pull a bot commit before their next change.
           #
           # Guarded, because `git commit` exits 1 on an empty index and
           # this step runs after the assets are uploaded: a re-run that
