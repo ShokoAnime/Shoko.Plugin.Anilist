@@ -5,9 +5,10 @@ Supplies AniList anime metadata to
 provider contract, under the `anilist` source (displayed as "AniList"). It
 replaces the AniList support that used to ship in the server.
 
-Releases are on the [releases page](https://github.com/ShokoAnime/Shoko.Plugin.Anilist/releases),
-and the manifest listing them is at
-`https://raw.githubusercontent.com/ShokoAnime/Shoko.Plugin.Anilist/metadata/manifest.json`.
+Install it from the Web UI under **Settings → Plugins → Browse**: it is listed
+in the Shoko Core Repository, which ships with Shoko Server, so there is no
+repository to add. Releases are also on the
+[releases page](https://github.com/ShokoAnime/Shoko.Plugin.Anilist/releases).
 Report problems in the [issue tracker](https://github.com/ShokoAnime/Shoko.Plugin.Anilist/issues)
 or on [Discord](https://discord.gg/vpeHDsg).
 
