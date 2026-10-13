@@ -3,7 +3,7 @@
   "name": "AniList Metadata",
   "overview": "Supplies AniList anime metadata, images, cast and crew, tags, studios, relations, recommendations and broadcast times for the \u0060anilist\u0060 metadata source, through Shoko\u0027s metadata provider contract.",
   "authors": "revam",
-  "repository_url": "https://github.com/revam/dotnet-shoko-plugin-anilist",
+  "repository_url": "https://github.com/ShokoAnime/Shoko.Plugin.Anilist",
   "tags": [
     "service-registration"
   ],
@@ -19,7 +19,7 @@
         {
           "runtime": "any",
           "abstraction": "6.0.0",
-          "url": "https://github.com/revam/dotnet-shoko-plugin-anilist/releases/download/v1.3.0/AniListMetadata-v1.3.0-any.zip",
+          "url": "https://github.com/ShokoAnime/Shoko.Plugin.Anilist/releases/download/v1.3.0/AniListMetadata-v1.3.0-any.zip",
           "checksum": "sha256:b17f09cc57ab4b5a753b9f6c82992464b2018d29113f3614eca4cdc657861f32"
         }
       ]
@@ -35,7 +35,7 @@
         {
           "runtime": "any",
           "abstraction": "6.0.0",
-          "url": "https://github.com/revam/dotnet-shoko-plugin-anilist/releases/download/v1.2.1/AniListMetadata-v1.2.1-any.zip",
+          "url": "https://github.com/ShokoAnime/Shoko.Plugin.Anilist/releases/download/v1.2.1/AniListMetadata-v1.2.1-any.zip",
           "checksum": "sha256:e206f2d4e820015b5dc51f1714087903d8aa3494f8896c4d32e22ae918266cfe"
         }
       ]
@@ -51,7 +51,7 @@
         {
           "runtime": "any",
           "abstraction": "6.0.0",
-          "url": "https://github.com/revam/dotnet-shoko-plugin-anilist/releases/download/v1.2.0/AniListMetadata-v1.2.0-any.zip",
+          "url": "https://github.com/ShokoAnime/Shoko.Plugin.Anilist/releases/download/v1.2.0/AniListMetadata-v1.2.0-any.zip",
           "checksum": "sha256:fb43527ca9d151f4802bae2a9d83a0d6d83205ae262a38dd3011c8b76c6188c9"
         }
       ]
@@ -67,7 +67,7 @@
         {
           "runtime": "any",
           "abstraction": "6.0.0",
-          "url": "https://github.com/revam/dotnet-shoko-plugin-anilist/releases/download/v1.1.0/AniListMetadata-v1.1.0-any.zip",
+          "url": "https://github.com/ShokoAnime/Shoko.Plugin.Anilist/releases/download/v1.1.0/AniListMetadata-v1.1.0-any.zip",
           "checksum": "sha256:3ca8fce40795d0efdc5becac55107bd29338fee1bcffdab6cb0a8bb4893a085b"
         }
       ]
@@ -83,7 +83,7 @@
         {
           "runtime": "any",
           "abstraction": "6.0.0",
-          "url": "https://github.com/revam/dotnet-shoko-plugin-anilist/releases/download/v1.0.0/AniListMetadata-v1.0.0-any.zip",
+          "url": "https://github.com/ShokoAnime/Shoko.Plugin.Anilist/releases/download/v1.0.0/AniListMetadata-v1.0.0-any.zip",
           "checksum": "sha256:46e53137c1c3c6b3089d06dada1b7d40335de7172d565a80c6fd28ebf7b40433"
         }
       ]
