@@ -23,7 +23,7 @@ namespace Shoko.Plugin.Anilist;
 /// and takes no dependencies; everything the plugin needs is registered in
 /// <see cref="RegisterServices(IServiceCollection, IApplicationPaths)"/>.
 /// </remarks>
-public class Plugin : IPlugin, IPluginServiceRegistration
+public class Plugin : IPlugin<AnilistConfiguration>, IPluginServiceRegistration
 {
     /// <summary>
     /// The embedded resource of the plugin's thumbnail.
