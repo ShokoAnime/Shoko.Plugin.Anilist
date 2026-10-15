@@ -10,7 +10,7 @@ in the Shoko Core Repository, which ships with Shoko Server, so there is no
 repository to add. Releases are also on the
 [releases page](https://github.com/ShokoAnime/Shoko.Plugin.Anilist/releases).
 Report problems in the [issue tracker](https://github.com/ShokoAnime/Shoko.Plugin.Anilist/issues)
-or on [Discord](https://discord.gg/vpeHDsg).
+or on [Discord](https://discord.gg/shokoanime).
 
 `AnilistSources` registers the source, with a short description, from its
 static constructor. `RegisterServices` touches the class, so the source is in
