@@ -143,11 +143,23 @@ internal sealed class FakeCharacter(MetadataCharacterData data) : ICharacter
 
     public string Name => data.Name;
 
-    public string? OriginalName => data.OriginalName;
+    public string Title => data.Name;
+
+    public ITitle DefaultTitle => new TitleStub { Source = data.ID.Source, Language = TitleLanguage.Unknown, LanguageCode = "unk", Type = TitleType.Main, Value = data.Name };
+
+    public ITitle? PreferredTitle => DefaultTitle;
+
+    public IReadOnlyList<ITitle> Titles => [DefaultTitle];
+
+    public string? OriginalLanguageCode => data.OriginalLanguageCode;
+
+    public string? OriginalCountryCode => data.OriginalCountryCode;
+
+    public TitleLanguage? OriginalLanguage => null;
+
+    public ITitle? OriginalTitle => null;
 
     public CharacterType Type => data.Type;
-
-    public IReadOnlyList<ITitle> AlternativeNames => [];
 
     public PersonGender Gender => data.Gender;
 
@@ -182,11 +194,23 @@ internal sealed class FakeCreator(MetadataCreatorData data) : ICreator
 
     public string Name => data.Name;
 
-    public string? OriginalName => data.OriginalName;
+    public string Title => data.Name;
+
+    public ITitle DefaultTitle => new TitleStub { Source = data.ID.Source, Language = TitleLanguage.Unknown, LanguageCode = "unk", Type = TitleType.Main, Value = data.Name };
+
+    public ITitle? PreferredTitle => DefaultTitle;
+
+    public IReadOnlyList<ITitle> Titles => [DefaultTitle];
+
+    public string? OriginalLanguageCode => data.OriginalLanguageCode;
+
+    public string? OriginalCountryCode => data.OriginalCountryCode;
+
+    public TitleLanguage? OriginalLanguage => null;
+
+    public ITitle? OriginalTitle => null;
 
     public CreatorType Type => data.Type;
-
-    public IReadOnlyList<ITitle> AlternativeNames => [];
 
     public PersonGender Gender => data.Gender;
 
@@ -239,7 +263,7 @@ internal sealed class FakeCast(MetadataGuid entry, MetadataCastData data, FakeCh
 
     public string Name => data.Name;
 
-    public string? OriginalName => character?.OriginalName;
+    public string? OriginalName => character?.Data.Titles.FirstOrDefault()?.Name;
 
     public string? Description => character?.Data.Overview;
 

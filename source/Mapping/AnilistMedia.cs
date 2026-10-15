@@ -48,6 +48,12 @@ public sealed record AnilistMedia
     /// <summary>The language the anime was made in, from its country of origin.</summary>
     public string OriginalLanguageCode { get; init; } = string.Empty;
 
+    /// <summary>
+    /// The country the anime comes from, AniList's <c>countryOfOrigin</c>,
+    /// or <c>null</c> when it gives none.
+    /// </summary>
+    public string? OriginalCountryCode { get; init; }
+
     #endregion
 
     #region Classification

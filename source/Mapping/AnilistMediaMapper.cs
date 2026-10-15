@@ -82,6 +82,7 @@ public static partial class AnilistMediaMapper
             Synonyms = ReadStringList(media["synonyms"]),
             EnglishOverview = AnilistUtility.StripHtml(GetString(media["description"])),
             OriginalLanguageCode = AnilistUtility.ParseOriginalLanguage(GetString(media["countryOfOrigin"])),
+            OriginalCountryCode = GetString(media["countryOfOrigin"])?.Trim().ToUpperInvariant() is { Length: > 0 } country ? country : null,
             Type = AnilistUtility.ParseFormat(GetString(media["format"])),
             Status = AnilistUtility.ParseReleaseStatus(GetString(media["status"])),
             Source = AnilistUtility.InferSourceMaterial(
@@ -178,6 +179,7 @@ public static partial class AnilistMediaMapper
             ReleaseStatus = media.Status,
             SourceMaterial = media.Source,
             OriginalLanguageCode = string.IsNullOrEmpty(media.OriginalLanguageCode) ? null : media.OriginalLanguageCode,
+            OriginalCountryCode = media.OriginalCountryCode,
             Popularity = media.Popularity,
             FavoriteCount = media.FavoriteCount,
             Resources = Resources(media),
@@ -969,14 +971,18 @@ public static partial class AnilistMediaMapper
     {
         var id = AnilistUtility.FormatID(characterID);
         var name = GetString(node["name"]?["full"])?.Trim() ?? string.Empty;
+        var native = GetString(node["name"]?["native"])?.Trim() is { Length: > 0 } nativeName ? nativeName : null;
+        // AniList gives a character no language, so the native name's script tells it where it can.
+        var languageCode = AnilistUtility.GuessScriptLanguage(native);
         return new()
         {
             ID = AnilistUtility.Guid(MetadataEntityType.Character, characterID),
             Name = name,
-            OriginalName = GetString(node["name"]?["native"])?.Trim() is { Length: > 0 } native ? native : null,
+            OriginalLanguageCode = languageCode,
+            Titles = NativeTitle(native, languageCode),
             Overview = AnilistUtility.StripHtml(GetString(node["description"])) is { Length: > 0 } description ? description : null,
             Type = CharacterType.Character,
-            AlternativeNames = AlternativeNames(node, name),
+            Synonyms = Synonyms(node, name),
             Gender = ParseGender(GetString(node["gender"])),
             BirthDay = ToFuzzyDate(ReadDateParts(node["dateOfBirth"])),
             Resources = [new() { Type = ResourceType.Metadata, Name = "AniList", Url = GetString(node["siteUrl"]) is { Length: > 0 } url ? url : AnilistUtility.CharacterUrl(characterID), ID = id }],
@@ -988,14 +994,19 @@ public static partial class AnilistMediaMapper
     {
         var id = AnilistUtility.FormatID(creatorID);
         var name = GetString(node["name"]?["full"])?.Trim() ?? string.Empty;
+        var native = GetString(node["name"]?["native"])?.Trim() is { Length: > 0 } nativeName ? nativeName : null;
+        // The person's own language, else what the native name's script tells; the country only when the home town names one.
+        var languageCode = AnilistUtility.ToLanguageCode(GetString(node["languageV2"])) ?? AnilistUtility.GuessScriptLanguage(native);
         return new()
         {
             ID = AnilistUtility.Guid(MetadataEntityType.Creator, creatorID),
             Name = name,
-            OriginalName = GetString(node["name"]?["native"])?.Trim() is { Length: > 0 } native ? native : null,
+            OriginalLanguageCode = languageCode,
+            OriginalCountryCode = LanguageExtensions.TryGetCountryCodeFromPlace(GetString(node["homeTown"]), out var countryCode) ? countryCode : null,
+            Titles = NativeTitle(native, languageCode),
             Overview = AnilistUtility.StripHtml(GetString(node["description"])) is { Length: > 0 } description ? description : null,
             Type = CreatorType.Person,
-            AlternativeNames = AlternativeNames(node, name),
+            Synonyms = Synonyms(node, name),
             Gender = ParseGender(GetString(node["gender"])),
             BirthDay = ToFuzzyDate(ReadDateParts(node["dateOfBirth"])),
             DeathDay = ToFuzzyDate(ReadDateParts(node["dateOfDeath"])),
@@ -1004,7 +1015,10 @@ public static partial class AnilistMediaMapper
         };
     }
 
-    private static List<MetadataNameData> AlternativeNames(JsonNode node, string name)
+    private static List<MetadataNameData> NativeTitle(string? native, string? languageCode)
+        => native is null ? [] : [new() { Name = native, LanguageCode = languageCode }];
+
+    private static List<MetadataNameData> Synonyms(JsonNode node, string name)
         => [.. ReadStringList(node["name"]?["alternative"])
             .Where(alternative => !string.Equals(alternative, name, StringComparison.Ordinal))
             .Select(alternative => new MetadataNameData { Name = alternative })];

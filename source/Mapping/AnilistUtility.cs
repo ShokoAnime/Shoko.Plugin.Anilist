@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -302,6 +303,26 @@ public static partial class AnilistUtility
         "KR" => "ko",
         var other => other.ToLowerInvariant(),
     };
+
+    /// <summary>
+    /// The language a native name's script gives away: kana for Japanese,
+    /// Hangul for Korean and Thai script for Thai. Han characters alone
+    /// could be Chinese or Japanese, so they give none.
+    /// </summary>
+    /// <param name="native">The native name, or <c>null</c>.</param>
+    /// <returns>The language code, or <c>null</c> when the script tells none.</returns>
+    public static string? GuessScriptLanguage(string? native)
+    {
+        if (string.IsNullOrEmpty(native))
+            return null;
+        if (native.Any(character => character is (>= '\u3040' and <= '\u30FF') or (>= '\u31F0' and <= '\u31FF') or (>= '\uFF66' and <= '\uFF9F')))
+            return "ja";
+        if (native.Any(character => character is (>= '\uAC00' and <= '\uD7AF') or (>= '\u1100' and <= '\u11FF') or (>= '\u3130' and <= '\u318F')))
+            return "ko";
+        if (native.Any(character => character is >= '\u0E00' and <= '\u0E7F'))
+            return "th";
+        return null;
+    }
 
     /// <summary>
     /// A language name or code AniList hands out, as a language code, or
