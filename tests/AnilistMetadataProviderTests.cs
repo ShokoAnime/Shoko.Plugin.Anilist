@@ -50,7 +50,8 @@ public class AnilistMetadataProviderTests
             .Concat([MetadataEntityType.Series, MetadataEntityType.Season, MetadataEntityType.Episode])
             .Except([MetadataEntityType.Creator, MetadataEntityType.Character]);
 
-        Assert.Equal(served.Select(kind => kind.Value).Order(StringComparer.Ordinal), ((IMetadataProvider)provider).DefaultEnabledKinds.Select(kind => kind.Value).Order(StringComparer.Ordinal));
+        var enabled = Assert.IsAssignableFrom<IEnumerable<MetadataEntityType>>(((IMetadataProvider)provider).DefaultEnabledKinds);
+        Assert.Equal(served.Select(kind => kind.Value).Order(StringComparer.Ordinal), enabled.Select(kind => kind.Value).Order(StringComparer.Ordinal));
     }
 
     [Fact]
