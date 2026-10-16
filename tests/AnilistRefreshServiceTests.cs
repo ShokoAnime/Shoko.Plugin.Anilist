@@ -105,15 +105,19 @@ public class AnilistRefreshServiceTests
         var luffy = people.Characters.Single(character => character.ID.ID == "40").Data;
         Assert.Equal(PersonGender.Male, luffy.Gender);
         Assert.Equal(new FuzzyDateOnly(null, 5, 5), luffy.BirthDay);
-        Assert.Equal("Straw Hat", Assert.Single(luffy.Synonyms).Name);
-        // The native name is the official one, in the language its kana give away.
-        Assert.Equal(("ja", "ja"), (Assert.Single(luffy.Titles).LanguageCode, luffy.OriginalLanguageCode));
+        // The full name romanizes the native one, the official one in the language its kana give away; the alternative names have no language.
+        Assert.Equal(
+            [("Luffy Monkey", TitleType.Main, "x-jat"), ("モンキー・D・ルフィ", TitleType.Official, "ja"), ("Straw Hat", TitleType.Synonym, "unk")],
+            luffy.Titles.Select(title => (title.Value, title.Type, title.LanguageCode))
+        );
+        Assert.Equal("ja", luffy.OriginalLanguageCode);
         Assert.Equal("40", Assert.Single(luffy.Resources).ID);
         var tanaka = people.Creators.Single(creator => creator.ID.ID == "95011").Data;
         Assert.Equal(new FuzzyDateOnly(1955, 1, 15), tanaka.BirthDay);
         Assert.Equal(PersonGender.Female, tanaka.Gender);
         // A person's native name is in their own language, and a home town naming no country gives none.
-        Assert.Equal([("田中真弓", "ja")], tanaka.Titles.Select(title => (title.Name, title.LanguageCode)));
+        var native = Assert.Single(tanaka.Titles, title => title.Type is TitleType.Official);
+        Assert.Equal(("田中真弓", "ja"), (native.Value, native.LanguageCode));
         Assert.Equal(("ja", null), (tanaka.OriginalLanguageCode, tanaka.OriginalCountryCode));
 
         var dub = people.Cast[_series].Single(cast => cast.CreatorID?.ID == "95012");

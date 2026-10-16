@@ -837,6 +837,7 @@ public static partial class AnilistMediaMapper
             if (edge is null || ReadCharacterNode(edge["node"], people) is not { } character)
                 continue;
 
+            var name = MainName(character.Titles);
             var roleType = AnilistUtility.ParseCastRoleType(GetString(edge["role"]));
             var voiced = false;
             if (edge["voiceActorRoles"] is JsonArray voiceActorRoles)
@@ -854,7 +855,7 @@ public static partial class AnilistMediaMapper
                     {
                         CharacterID = character.ID,
                         CreatorID = creator.ID,
-                        Name = character.Name,
+                        Name = name,
                         RoleType = roleType,
                         LanguageCode = AnilistUtility.ToLanguageCode(GetString(staffNode["languageV2"])),
                         RoleNotes = GetString(voiceActorRole["roleNotes"]) is { Length: > 0 } roleNotes ? roleNotes : null,
@@ -865,7 +866,7 @@ public static partial class AnilistMediaMapper
 
             // A character nobody voices still appears in the anime.
             if (!voiced && !people.Cast.Any(cast => cast.CharacterID == character.ID))
-                people.Cast.Add(new() { CharacterID = character.ID, Name = character.Name, RoleType = roleType });
+                people.Cast.Add(new() { CharacterID = character.ID, Name = name, RoleType = roleType });
         }
     }
 
@@ -977,12 +978,10 @@ public static partial class AnilistMediaMapper
         return new()
         {
             ID = AnilistUtility.Guid(MetadataEntityType.Character, characterID),
-            Name = name,
+            Titles = PersonTitles(node, name, native, languageCode),
             OriginalLanguageCode = languageCode,
-            Titles = NativeTitle(native, languageCode),
-            Overview = AnilistUtility.StripHtml(GetString(node["description"])) is { Length: > 0 } description ? description : null,
+            Overviews = PersonOverviews(node),
             Type = CharacterType.Character,
-            Synonyms = Synonyms(node, name),
             Gender = ParseGender(GetString(node["gender"])),
             BirthDay = ToFuzzyDate(ReadDateParts(node["dateOfBirth"])),
             Resources = [new() { Type = ResourceType.Metadata, Name = "AniList", Url = GetString(node["siteUrl"]) is { Length: > 0 } url ? url : AnilistUtility.CharacterUrl(characterID), ID = id }],
@@ -1000,13 +999,11 @@ public static partial class AnilistMediaMapper
         return new()
         {
             ID = AnilistUtility.Guid(MetadataEntityType.Creator, creatorID),
-            Name = name,
+            Titles = PersonTitles(node, name, native, languageCode),
             OriginalLanguageCode = languageCode,
             OriginalCountryCode = LanguageExtensions.TryGetCountryCodeFromPlace(GetString(node["homeTown"]), out var countryCode) ? countryCode : null,
-            Titles = NativeTitle(native, languageCode),
-            Overview = AnilistUtility.StripHtml(GetString(node["description"])) is { Length: > 0 } description ? description : null,
+            Overviews = PersonOverviews(node),
             Type = CreatorType.Person,
-            Synonyms = Synonyms(node, name),
             Gender = ParseGender(GetString(node["gender"])),
             BirthDay = ToFuzzyDate(ReadDateParts(node["dateOfBirth"])),
             DeathDay = ToFuzzyDate(ReadDateParts(node["dateOfDeath"])),
@@ -1015,13 +1012,49 @@ public static partial class AnilistMediaMapper
         };
     }
 
-    private static List<MetadataNameData> NativeTitle(string? native, string? languageCode)
-        => native is null ? [] : [new() { Name = native, LanguageCode = languageCode }];
-
-    private static List<MetadataNameData> Synonyms(JsonNode node, string name)
-        => [.. ReadStringList(node["name"]?["alternative"])
+    /// <summary>
+    /// A character's or person's names: the full name as the main title, in
+    /// the transcription it romanizes the native name with, the native name
+    /// as the official one, and the alternative names as synonyms, which
+    /// AniList gives no language.
+    /// </summary>
+    /// <param name="node">The <c>Character</c> or <c>Staff</c> node.</param>
+    /// <param name="name">The full name, or an empty string when there is none.</param>
+    /// <param name="native">The native name, or <c>null</c>.</param>
+    /// <param name="languageCode">The native name's language, or <c>null</c> when unknown.</param>
+    /// <returns>The titles, the main one first.</returns>
+    private static List<ITitle> PersonTitles(JsonNode node, string name, string? native, string? languageCode)
+    {
+        List<ITitle> titles = [];
+        if (name.Length > 0)
+            titles.Add(Title(name, AnilistUtility.GetFullNameTranscription(languageCode, native is not null)?.GetString(), TitleType.Main));
+        if (native is not null)
+            titles.Add(Title(native, languageCode, TitleType.Official));
+        titles.AddRange(ReadStringList(node["name"]?["alternative"])
             .Where(alternative => !string.Equals(alternative, name, StringComparison.Ordinal))
-            .Select(alternative => new MetadataNameData { Name = alternative })];
+            .Select(alternative => Title(alternative, null, TitleType.Synonym)));
+        return titles;
+    }
+
+    /// <summary>
+    /// A character's or person's description, which AniList writes in
+    /// English, as their one overview.
+    /// </summary>
+    /// <param name="node">The <c>Character</c> or <c>Staff</c> node.</param>
+    /// <returns>The overviews, empty when there is no description.</returns>
+    private static List<IText> PersonOverviews(JsonNode node)
+        => AnilistUtility.StripHtml(GetString(node["description"])) is { Length: > 0 } description
+            ? [new TextStub { Source = MetadataSource.AniList, Language = TitleLanguage.English, LanguageCode = "en", Value = description }]
+            : [];
+
+    /// <summary>
+    /// The main title among a character's or person's titles, the name a
+    /// credit is under.
+    /// </summary>
+    /// <param name="titles">The titles.</param>
+    /// <returns>The main title, or an empty string when there is none.</returns>
+    private static string MainName(IReadOnlyList<ITitle> titles)
+        => titles.FirstOrDefault(title => title.Type is TitleType.Main)?.Value ?? string.Empty;
 
     /// <summary>
     /// The portrait a <c>Character</c> or <c>Staff</c> node names, as the

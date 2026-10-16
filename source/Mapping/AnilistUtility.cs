@@ -290,6 +290,23 @@ public static partial class AnilistUtility
         };
 
     /// <summary>
+    /// The transcription a character's or person's full name is written in,
+    /// when it romanizes their native name: pinyin for a Chinese one, a
+    /// Korean transcription for a Korean one and romaji for the rest. One of
+    /// another known language goes by a name that is no transcription.
+    /// </summary>
+    /// <param name="languageCode">Their language, or <c>null</c> when unknown.</param>
+    /// <param name="hasNativeName">Whether they have a native name.</param>
+    /// <returns>The transcription, or <c>null</c> when the name is none.</returns>
+    public static TitleLanguage? GetFullNameTranscription(string? languageCode, bool hasNativeName)
+        => languageCode?.Split('-')[0].ToLowerInvariant() switch
+        {
+            null => hasNativeName ? TitleLanguage.Romaji : null,
+            "ja" or "zh" or "ko" or "th" => GetMainTitleLanguage(languageCode),
+            _ => null,
+        };
+
+    /// <summary>
     /// Maps AniList's <c>countryOfOrigin</c> to the language the native title
     /// is in.
     /// </summary>

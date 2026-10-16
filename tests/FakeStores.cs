@@ -141,15 +141,16 @@ internal sealed class FakeCharacter(MetadataCharacterData data) : ICharacter
 
     public MetadataCharacterData Data => data;
 
-    public string Name => data.Name;
+    public string Name => DefaultTitle.Value;
 
-    public string Title => data.Name;
+    public string Title => DefaultTitle.Value;
 
-    public ITitle DefaultTitle => new TitleStub { Source = data.ID.Source, Language = TitleLanguage.Unknown, LanguageCode = "unk", Type = TitleType.Main, Value = data.Name };
+    public ITitle DefaultTitle => data.Titles.FirstOrDefault(title => title.Type is TitleType.Main)
+        ?? new TitleStub { Source = data.ID.Source, Language = TitleLanguage.Unknown, LanguageCode = "unk", Type = TitleType.Main, Value = $"AniList Character {data.ID.ID}" };
 
     public ITitle? PreferredTitle => DefaultTitle;
 
-    public IReadOnlyList<ITitle> Titles => [DefaultTitle];
+    public IReadOnlyList<ITitle> Titles => data.Titles;
 
     public string? OriginalLanguageCode => data.OriginalLanguageCode;
 
@@ -165,11 +166,11 @@ internal sealed class FakeCharacter(MetadataCharacterData data) : ICharacter
 
     public FuzzyDateOnly? BirthDay => data.BirthDay;
 
-    public IText? DefaultOverview => data.Overview is { } overview ? new TextStub { Source = data.ID.Source, Language = TitleLanguage.English, LanguageCode = "en", Value = overview } : null;
+    public IText? DefaultOverview => data.Overviews.FirstOrDefault();
 
     public IText? PreferredOverview => DefaultOverview;
 
-    public IReadOnlyList<IText> Overviews => DefaultOverview is { } overview ? [overview] : [];
+    public IReadOnlyList<IText> Overviews => data.Overviews;
 
     public DateTime LastUpdatedAt => DateTime.UnixEpoch;
 
@@ -192,15 +193,16 @@ internal sealed class FakeCreator(MetadataCreatorData data) : ICreator
 
     public MetadataCreatorData Data => data;
 
-    public string Name => data.Name;
+    public string Name => DefaultTitle.Value;
 
-    public string Title => data.Name;
+    public string Title => DefaultTitle.Value;
 
-    public ITitle DefaultTitle => new TitleStub { Source = data.ID.Source, Language = TitleLanguage.Unknown, LanguageCode = "unk", Type = TitleType.Main, Value = data.Name };
+    public ITitle DefaultTitle => data.Titles.FirstOrDefault(title => title.Type is TitleType.Main)
+        ?? new TitleStub { Source = data.ID.Source, Language = TitleLanguage.Unknown, LanguageCode = "unk", Type = TitleType.Main, Value = $"AniList Creator {data.ID.ID}" };
 
     public ITitle? PreferredTitle => DefaultTitle;
 
-    public IReadOnlyList<ITitle> Titles => [DefaultTitle];
+    public IReadOnlyList<ITitle> Titles => data.Titles;
 
     public string? OriginalLanguageCode => data.OriginalLanguageCode;
 
@@ -222,11 +224,11 @@ internal sealed class FakeCreator(MetadataCreatorData data) : ICreator
 
     public bool IsRestricted => data.IsRestricted;
 
-    public IText? DefaultOverview => data.Overview is { } overview ? new TextStub { Source = data.ID.Source, Language = TitleLanguage.English, LanguageCode = "en", Value = overview } : null;
+    public IText? DefaultOverview => data.Overviews.FirstOrDefault();
 
     public IText? PreferredOverview => DefaultOverview;
 
-    public IReadOnlyList<IText> Overviews => DefaultOverview is { } overview ? [overview] : [];
+    public IReadOnlyList<IText> Overviews => data.Overviews;
 
     public DateTime LastUpdatedAt => DateTime.UnixEpoch;
 
@@ -263,9 +265,9 @@ internal sealed class FakeCast(MetadataGuid entry, MetadataCastData data, FakeCh
 
     public string Name => data.Name;
 
-    public string? OriginalName => character?.Data.Titles.FirstOrDefault()?.Name;
+    public string? OriginalName => character?.Titles.FirstOrDefault(title => title.Type is TitleType.Official)?.Value;
 
-    public string? Description => character?.Data.Overview;
+    public string? Description => character?.DefaultOverview?.Value;
 
     public string? DubGroup => data.DubGroup;
 

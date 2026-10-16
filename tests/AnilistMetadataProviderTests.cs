@@ -329,7 +329,7 @@ public class AnilistMetadataProviderTests
         Assert.True(await provider.RefreshEntity(studioID, TestContext.Current.CancellationToken));
 
         var creator = Assert.Single(harness.Stores.People.Creators);
-        Assert.Equal(("Mayumi Tanaka", "田中真弓", PersonGender.Female), (creator.Name, creator.Data.Titles.Single().Name, creator.Gender));
+        Assert.Equal(("Mayumi Tanaka", "田中真弓", PersonGender.Female), (creator.Name, creator.Data.Titles.Single(title => title.Type is TitleType.Official).Value, creator.Gender));
         Assert.Equal("Monkey D. Luffy", Assert.Single(harness.Stores.People.Characters).Name);
         Assert.Equal("Toei Animation", harness.Stores.Studios.GetStudio(studioID)?.Name);
         Assert.Equal("staff/large/n95.jpg", harness.Stores.Store.GetPortrait(creatorID));

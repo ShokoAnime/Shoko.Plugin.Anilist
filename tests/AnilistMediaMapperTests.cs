@@ -250,7 +250,10 @@ public class AnilistMediaMapperTests
         Assert.Equal("Funimation", people.Cast[1].DubGroup);
         Assert.Null(people.Cast[2].CreatorID);
         Assert.Equal(CastRoleType.BackgroundCharacter, people.Cast[2].RoleType);
-        Assert.Equal("Captain of the Straw Hat Pirates.", people.Characters[40].Overview);
+        // The credit is under the character's main name, and the description is its English overview.
+        Assert.Equal("Luffy Monkey", people.Cast[0].Name);
+        var overview = Assert.Single(people.Characters[40].Overviews);
+        Assert.Equal(("Captain of the Straw Hat Pirates.", "en"), (overview.Value, overview.LanguageCode));
         Assert.Equal(new FuzzyDateOnly(1955, 1, 15), people.Creators[95011].BirthDay);
         Assert.Equal(new FuzzyDateOnly(null, 6, 13), people.Creators[95012].BirthDay);
         Assert.Equal(new FuzzyDateOnly(null, 5, 5), people.Characters[40].BirthDay);

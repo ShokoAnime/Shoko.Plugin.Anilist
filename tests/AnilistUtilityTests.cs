@@ -154,6 +154,16 @@ public class AnilistUtilityTests
         => Assert.Equal(expected, AnilistUtility.GetMainTitleLanguage(originalLanguageCode));
 
     [Theory]
+    [InlineData("ja", false, TitleLanguage.Romaji)]
+    [InlineData("zh", true, TitleLanguage.Pinyin)]
+    [InlineData("ko", true, TitleLanguage.KoreanTranscription)]
+    [InlineData(null, true, TitleLanguage.Romaji)]
+    [InlineData(null, false, null)]
+    [InlineData("en", true, null)]
+    public void GetFullNameTranscription_RomanizesOnlyANativeName(string? languageCode, bool hasNativeName, TitleLanguage? expected)
+        => Assert.Equal(expected, AnilistUtility.GetFullNameTranscription(languageCode, hasNativeName));
+
+    [Theory]
     [InlineData("JP", "ja")]
     [InlineData(null, "ja")]
     [InlineData("TW", "zh-TW")]

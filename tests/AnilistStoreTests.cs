@@ -75,7 +75,7 @@ public class AnilistStoreTests
         using var harness = new TestHarness();
         var creator = AnilistUtility.Guid(MetadataEntityType.Creator, 95);
         var character = AnilistUtility.Guid(MetadataEntityType.Character, 40);
-        harness.People.SaveCreators([new() { ID = creator, Name = "Mayumi Tanaka" }]);
+        harness.People.SaveCreators([new() { ID = creator }]);
         harness.Store.SavePortraits([new(creator, "staff/large/n95.jpg"), new(character, "character/large/b40.png")]);
 
         Assert.Equal("creator/95", AnilistStore.PortraitKey(creator));
