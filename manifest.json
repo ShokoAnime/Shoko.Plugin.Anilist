@@ -2,7 +2,7 @@
   "id": "e73c1e23-111a-4cf0-bab8-054b738c5101",
   "name": "AniList",
   "overview": "Supplies AniList anime metadata, images, cast and crew, tags, studios, relations, recommendations and broadcast times for the \u0060anilist\u0060 metadata source, through Shoko\u0027s metadata provider contract.",
-  "authors": "revam",
+  "authors": "Shoko Team",
   "repository_url": "https://github.com/ShokoAnime/Shoko.Plugin.Anilist",
   "tags": [
     "service-registration"
