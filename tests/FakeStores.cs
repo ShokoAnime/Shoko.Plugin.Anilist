@@ -1,6 +1,7 @@
 using Moq;
 using Shoko.Abstractions.Metadata;
 using Shoko.Abstractions.Metadata.Enums;
+using Shoko.Abstractions.Metadata.Events;
 using Shoko.Abstractions.Metadata.Storage;
 using Shoko.Abstractions.Metadata.Stub;
 
@@ -29,6 +30,18 @@ internal sealed class FakeTag(MetadataTagData data, MetadataEntryTagData? entry 
 
 internal sealed class FakeTagStore : IMetadataTagStore
 {
+    public event EventHandler<MetadataEntitiesRemovedEventArgs>? EntitiesRemoved
+    {
+        add { }
+        remove { }
+    }
+
+    public event EventHandler<MetadataEntitiesSavedEventArgs>? EntitiesSaved
+    {
+        add { }
+        remove { }
+    }
+
     private readonly Dictionary<MetadataGuid, MetadataTagData> _tags = [];
 
     public Dictionary<MetadataGuid, List<MetadataEntryTagData>> Entries { get; } = [];
@@ -78,6 +91,8 @@ internal sealed class FakeStudio(MetadataStudioData data, StudioType type) : ISt
 
     public StudioType StudioType { get; } = type;
 
+    public bool IsStub => false;
+
     public IEnumerable<IMovie> MovieWorks => [];
 
     public IEnumerable<ISeries> SeriesWorks => [];
@@ -87,6 +102,30 @@ internal sealed class FakeStudio(MetadataStudioData data, StudioType type) : ISt
 
 internal sealed class FakeStudioStore : IMetadataStudioStore
 {
+    public event EventHandler<MetadataEntitiesRemovedEventArgs>? EntitiesRemoved
+    {
+        add { }
+        remove { }
+    }
+
+    public event EventHandler<MetadataEntitiesSavedEventArgs>? EntitiesSaved
+    {
+        add { }
+        remove { }
+    }
+
+    public event EventHandler<MetadataEntryLinksChangedEventArgs>? StudiosChanged
+    {
+        add { }
+        remove { }
+    }
+
+    public event EventHandler<MetadataEntryLinksChangedEventArgs>? NetworksChanged
+    {
+        add { }
+        remove { }
+    }
+
     private readonly Dictionary<MetadataGuid, MetadataStudioData> _studios = [];
 
     public Dictionary<MetadataGuid, List<MetadataEntryStudioData>> Entries { get; } = [];
@@ -100,7 +139,12 @@ internal sealed class FakeStudioStore : IMetadataStudioStore
     public IReadOnlyList<MetadataGuid> GetEntriesForStudio(MetadataGuid studio)
         => [.. Entries.Where(pair => pair.Value.Any(entry => entry.StudioID == studio)).Select(pair => pair.Key)];
 
+    public IReadOnlyList<IStudio> GetAllStudios(MetadataSource source)
+        => [.. _studios.Values.Where(studio => studio.ID.Source == source).Select(studio => new FakeStudio(studio, StudioType.None))];
+
     public INetwork? GetNetwork(MetadataGuid id) => null;
+
+    public IReadOnlyList<INetwork> GetAllNetworks(MetadataSource source) => [];
 
     public IReadOnlyList<INetwork> GetNetworks(MetadataGuid entry) => [];
 
@@ -178,6 +222,8 @@ internal sealed class FakeCharacter(MetadataCharacterData data) : ICharacter
 
     public DateTime? LastRefreshedAt => null;
 
+    public bool IsStub => false;
+
     public IReadOnlyList<Resource> Resources => data.Resources;
 
     public IEnumerable<ICast<IEpisode>> EpisodeCastRoles => [];
@@ -235,6 +281,8 @@ internal sealed class FakeCreator(MetadataCreatorData data) : ICreator
     public DateTime CreatedAt => DateTime.UnixEpoch;
 
     public DateTime? LastRefreshedAt => null;
+
+    public bool IsStub => false;
 
     public IReadOnlyList<Resource> Resources => data.Resources;
 
@@ -309,6 +357,24 @@ internal sealed class FakeCrew(MetadataGuid entry, MetadataCrewData data, FakeCr
 
 internal sealed class FakePeopleStore : IMetadataPeopleStore
 {
+    public event EventHandler<MetadataEntitiesRemovedEventArgs>? EntitiesRemoved
+    {
+        add { }
+        remove { }
+    }
+
+    public event EventHandler<MetadataCreditsChangedEventArgs>? CreditsChanged
+    {
+        add { }
+        remove { }
+    }
+
+    public event EventHandler<MetadataEntitiesSavedEventArgs>? EntitiesSaved
+    {
+        add { }
+        remove { }
+    }
+
     private readonly Dictionary<MetadataGuid, FakeCharacter> _characters = [];
 
     private readonly Dictionary<MetadataGuid, FakeCreator> _creators = [];
@@ -324,6 +390,12 @@ internal sealed class FakePeopleStore : IMetadataPeopleStore
     public ICreator? GetCreator(MetadataGuid id) => _creators.GetValueOrDefault(id);
 
     public ICharacter? GetCharacter(MetadataGuid id) => _characters.GetValueOrDefault(id);
+
+    public IReadOnlyList<ICreator> GetAllCreators(MetadataSource source)
+        => [.. _creators.Values.Where(creator => creator.ID.Source == source)];
+
+    public IReadOnlyList<ICharacter> GetAllCharacters(MetadataSource source)
+        => [.. _characters.Values.Where(character => character.ID.Source == source)];
 
     public IReadOnlyList<ICast> GetCast(MetadataGuid entry)
         => Cast.TryGetValue(entry, out var cast)
