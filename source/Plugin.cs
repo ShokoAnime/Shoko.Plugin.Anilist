@@ -18,47 +18,24 @@ namespace Shoko.Plugin.Anilist;
 /// contract.
 /// </summary>
 /// <remarks>
-/// This class carries the plugin's identity. It is built during discovery
-/// before any container exists, so it keeps a public parameterless constructor
+/// The plugin's identity and images are in the project, and the build generates
+/// the rest of this class from them. It is built during discovery before any
+/// container exists, so it keeps a public parameterless constructor
 /// and takes no dependencies; everything the plugin needs is registered in
 /// <see cref="RegisterServices(IServiceCollection, IApplicationPaths)"/>.
 /// </remarks>
-public class Plugin : IPlugin<AnilistConfiguration>, IPluginServiceRegistration
+public partial class Plugin : IPlugin<AnilistConfiguration>, IPluginServiceRegistration
 {
-    /// <summary>
-    /// The embedded resource of the plugin's thumbnail.
-    /// </summary>
-    internal const string ThumbnailResourceName = "Shoko.Plugin.Anilist.Assets.thumbnail.svg";
-
     /// <summary>
     /// The embedded resource of the plugin's icon, which is the source's icon
     /// too.
     /// </summary>
-    internal const string IconResourceName = "Shoko.Plugin.Anilist.Assets.icon.svg";
+    internal const string IconResourceName = "Shoko.Plugin.Anilist.PluginIcon.svg";
 
     /// <summary>
-    /// The plugin's ID, the same as the one in <c>manifest.json</c>.
+    /// The plugin's ID, the same as the <c>PluginID</c> in the project.
     /// </summary>
     public static readonly Guid PluginID = new("e73c1e23-111a-4cf0-bab8-054b738c5101");
-
-    /// <inheritdoc/>
-    public Guid ID { get; private init; } = PluginID;
-
-    /// <inheritdoc/>
-    public string Name { get; private set; } = "AniList";
-
-    /// <inheritdoc/>
-    public string Description { get; private set; } = """
-        Supplies AniList anime metadata for the anilist metadata source through Shoko's metadata
-        provider contract: titles, overviews, images, cast and crew, studios, tags and
-        genres, relations, recommendations and broadcast times.
-    """;
-
-    /// <inheritdoc/>
-    public string? EmbeddedThumbnailResourceName => ThumbnailResourceName;
-
-    /// <inheritdoc/>
-    public string? EmbeddedIconResourceName => IconResourceName;
 
     /// <inheritdoc/>
     public static void RegisterServices(IServiceCollection serviceCollection, IApplicationPaths applicationPaths)

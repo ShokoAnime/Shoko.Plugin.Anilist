@@ -1,4 +1,6 @@
+using System.Linq;
 using System.Net;
+using System.Reflection;
 using Moq;
 using Shoko.Abstractions.Connectivity.Suspensions;
 using Shoko.Abstractions.Metadata;
@@ -59,7 +61,7 @@ public class AnilistMetadataProviderTests
     {
         using var harness = new ServiceHarness();
 
-        Assert.Equal(new Plugin().EmbeddedIconResourceName, harness.Get<AnilistMetadataProvider>().EmbeddedIconResourceName);
+        Assert.Equal(PluginIcon, harness.Get<AnilistMetadataProvider>().EmbeddedIconResourceName);
     }
 
     [Fact]
@@ -366,4 +368,7 @@ public class AnilistMetadataProviderTests
     /// </summary>
     /// <param name="ID">The entry's ID.</param>
     private sealed record Entry(MetadataGuid ID) : IMetadata;
+
+    private static string PluginIcon
+        => typeof(Plugin).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>().Single(attribute => attribute.Key == "PackageIcon").Value!;
 }

@@ -15,6 +15,15 @@
         <EnableDynamicLoading>true</EnableDynamicLoading>
     </PropertyGroup>
 
+    <PropertyGroup Label="Plugin">
+        <PluginGenerateClass>true</PluginGenerateClass>
+        <PluginID>e73c1e23-111a-4cf0-bab8-054b738c5101</PluginID>
+        <PluginName>AniList</PluginName>
+        <PluginOverview>Supplies AniList anime metadata, images, cast and crew, tags, studios, relations, recommendations and broadcast times for the `anilist` metadata source, through Shoko's metadata provider contract.</PluginOverview>
+        <PluginIcon>Assets/icon.svg</PluginIcon>
+        <PluginThumbnail>Assets/thumbnail.svg</PluginThumbnail>
+    </PropertyGroup>
+
     <ItemGroup>
         <InternalsVisibleTo Include="Shoko.Plugin.Anilist.Tests" />
     </ItemGroup>
@@ -37,18 +46,12 @@
     </ItemGroup>
 
     <ItemGroup>
-        <!-- The plugin's thumbnail and icon, read by the server through the
-             plugin. The icon is also the source's icon. -->
-        <EmbeddedResource Include="Assets\thumbnail.svg" LogicalName="Shoko.Plugin.Anilist.Assets.thumbnail.svg" />
-        <EmbeddedResource Include="Assets\icon.svg" LogicalName="Shoko.Plugin.Anilist.Assets.icon.svg" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <!-- Injects the embedded plugin identity metadata the server reads during
-             discovery, taken from `manifest.json` one directory up. PrivateAssets
-             alone is not enough: without ExcludeAssets the package's own MSBuild
-             tasks and satellite assemblies end up in the plugin output. -->
-        <PackageReference Include="Shoko.BuildTools.Targets" Version="0.3.1" PrivateAssets="All" ExcludeAssets="runtime" />
+        <!-- Injects the embedded plugin identity metadata the server reads
+             during discovery, from the `Plugin*` properties above, and
+             generates the plugin class from them. PrivateAssets alone is not
+             enough: without ExcludeAssets the package's own MSBuild tasks and
+             satellite assemblies end up in the plugin output. -->
+        <PackageReference Include="Shoko.BuildTools.Targets" Version="0.6.0" PrivateAssets="All" ExcludeAssets="runtime" />
         <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.203" PrivateAssets="All" />
         <PackageReference Include="SmartAnalyzers.MultithreadingAnalyzer" Version="1.1.31" PrivateAssets="All" />
     </ItemGroup>
