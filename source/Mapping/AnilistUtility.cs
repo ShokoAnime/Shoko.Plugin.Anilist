@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
@@ -340,6 +341,36 @@ public static partial class AnilistUtility
             return "th";
         return null;
     }
+
+    /// <summary>
+    /// The language a character's native name is in: what its script gives
+    /// away, else, for a name written in Han characters, the language of the
+    /// anime the character is read from, which tells Chinese from Japanese.
+    /// </summary>
+    /// <param name="native">The native name, or <c>null</c>.</param>
+    /// <param name="mediaLanguageCode">The original language of the anime the character appears in, or <c>null</c> when unknown.</param>
+    /// <returns>The language code, or <c>null</c> when neither tells one.</returns>
+    public static string? GuessCharacterLanguage(string? native, string? mediaLanguageCode)
+        => GuessScriptLanguage(native)
+            ?? (!string.IsNullOrWhiteSpace(mediaLanguageCode) && HasHanCharacters(native) ? mediaLanguageCode.Trim() : null);
+
+    /// <summary>
+    /// The language most of the anime a character appears in are in, the
+    /// first in code order on a tie, for a character read on its own.
+    /// </summary>
+    /// <param name="languageCodes">The original languages of the anime, one per credit; empty ones are skipped.</param>
+    /// <returns>The language code, or <c>null</c> when none is known.</returns>
+    public static string? MostCommonLanguage(IEnumerable<string?> languageCodes)
+        => languageCodes
+            .Where(code => !string.IsNullOrWhiteSpace(code))
+            .GroupBy(code => code!.Trim(), StringComparer.OrdinalIgnoreCase)
+            .OrderByDescending(group => group.Count())
+            .ThenBy(group => group.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.Key)
+            .FirstOrDefault();
+
+    private static bool HasHanCharacters(string? value)
+        => !string.IsNullOrEmpty(value) && value.EnumerateRunes().Any(rune => rune.Value is (>= 0x4E00 and <= 0x9FFF) or (>= 0x3400 and <= 0x4DBF) or (>= 0xF900 and <= 0xFAFF) or (>= 0x20000 and <= 0x3134F));
 
     /// <summary>
     /// A language name or code AniList hands out, as a language code, or

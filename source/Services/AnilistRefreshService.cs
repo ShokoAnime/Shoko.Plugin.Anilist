@@ -154,7 +154,11 @@ public sealed class AnilistRefreshService(
         else if (AnilistUtility.TryGetID(entityID, MetadataEntityType.Character, out var anilistCharacterID))
         {
             var node = await apiClient.GetCharacterAsync(anilistCharacterID, cancellationToken).ConfigureAwait(false);
-            if (AnilistMediaMapper.ReadCharacterNode(node, people) is not { } character)
+            // Read on its own, a character's native name goes by the anime it is stored in.
+            var mediaLanguageCode = store.People.GetCharacter(entityID) is { } stored
+                ? AnilistUtility.MostCommonLanguage(stored.SeriesCastRoles.Select(role => role.ParentOfType?.OriginalLanguageCode))
+                : null;
+            if (AnilistMediaMapper.ReadCharacterNode(node, people, mediaLanguageCode) is not { } character)
                 return false;
 
             store.People.SaveCharacters([character]);
@@ -234,7 +238,7 @@ public sealed class AnilistRefreshService(
         var wholeCast = await ReadPeoplePages(
             node["characters"],
             IsKindOn(MetadataEntityType.Character),
-            page => AnilistMediaMapper.ReadCharacterPage(page, castPeople),
+            page => AnilistMediaMapper.ReadCharacterPage(page, castPeople, media.OriginalLanguageCode),
             nextPage => apiClient.GetCharactersPageAsync(media.ID, nextPage, cancellationToken)
         ).ConfigureAwait(false);
         if (wholeCast || store.People.GetCast(seriesID).Count is 0)

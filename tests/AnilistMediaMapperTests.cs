@@ -239,7 +239,7 @@ public class AnilistMediaMapperTests
     {
         var people = new AnilistPeople();
 
-        AnilistMediaMapper.ReadCharacterPage(Media()["characters"], people);
+        AnilistMediaMapper.ReadCharacterPage(Media()["characters"], people, "ja");
 
         Assert.Equal([40, 41], people.Characters.Keys.Order());
         Assert.Equal([95011, 95012], people.Creators.Keys.Order());
@@ -265,6 +265,41 @@ public class AnilistMediaMapperTests
         Assert.Null(people.Characters[41].DefaultImageResourceIDs);
         Assert.Equal(AnilistUtility.Guid(MetadataEntityType.Character, 40), people.Cast[0].CharacterID);
         Assert.Equal(CastRoleType.MainCharacter, people.Cast[0].RoleType);
+    }
+
+    [Theory]
+    [InlineData("中野弥生", "ja", "ja", "x-jat")]
+    [InlineData("李白", "zh", "zh", "x-zht")]
+    [InlineData("林默", "zh-TW", "zh-TW", "x-zht")]
+    [InlineData("김민수", "ja", "ko", "x-kot")]
+    [InlineData("モンキー・D・ルフィ", "zh", "ja", "x-jat")]
+    [InlineData("李白", null, null, "x-jat")]
+    [InlineData("John Smith", "ja", null, "x-jat")]
+    public void ReadCharacterNode_LabelsTheNativeName_ByScriptElseByTheAnime(string native, string? mediaLanguage, string? expected, string mainLanguage)
+    {
+        var node = JsonNode.Parse($$"""{ "id": 1, "name": { "full": "Name", "native": "{{native}}" } }""");
+
+        var character = AnilistMediaMapper.ReadCharacterNode(node, new(), mediaLanguage)!;
+
+        Assert.Equal(expected, character.OriginalLanguageCode);
+        Assert.Equal(expected ?? "unk", Assert.Single(character.Titles, title => title.Type is TitleType.Official).LanguageCode);
+        Assert.Equal(mainLanguage, Assert.Single(character.Titles, title => title.Type is TitleType.Main).LanguageCode);
+    }
+
+    [Theory]
+    [InlineData("Japanese", "ja")]
+    [InlineData("Chinese", "zh")]
+    [InlineData("Korean", "ko")]
+    [InlineData(null, null)]
+    public void ReadStaffNode_LabelsAHanNativeName_ByThePersonsLanguage(string? language, string? expected)
+    {
+        var node = JsonNode.Parse("""{ "id": 1, "name": { "full": "Name", "native": "李白" } }""")!;
+        node["languageV2"] = language;
+
+        var creator = AnilistMediaMapper.ReadStaffNode(node, new())!;
+
+        Assert.Equal(expected, creator.OriginalLanguageCode);
+        Assert.Equal(expected ?? "unk", Assert.Single(creator.Titles, title => title.Type is TitleType.Official).LanguageCode);
     }
 
     [Fact]

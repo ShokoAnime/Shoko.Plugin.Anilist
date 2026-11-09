@@ -15,6 +15,7 @@ using Shoko.Abstractions.Metadata.Search;
 using Shoko.Abstractions.Metadata.Services;
 using Shoko.Abstractions.Metadata.Shoko;
 using Shoko.Abstractions.Metadata.Storage;
+using Shoko.Abstractions.Metadata.Text.Options;
 using Shoko.Plugin.Anilist.Airing;
 using Shoko.Plugin.Anilist.Api;
 using Shoko.Plugin.Anilist.Metadata;
@@ -60,6 +61,13 @@ internal sealed class ServiceHarness : IDisposable
         AiringScheduleService.Setup(service => service.GetProviderInfo(It.IsAny<IAiringScheduleProvider>())).Throws(new ArgumentException("Not registered."));
         ImageManager.Setup(manager => manager.GetImagesForEntity(It.IsAny<Shoko.Abstractions.Metadata.Containers.IWithImages>(), It.IsAny<Shoko.Abstractions.Metadata.Image.Options.ImageFilteringOptions?>())).Returns([]);
         SystemService.SetupGet(service => service.IsStarted).Returns(true);
+        // The stored texts are the ones the fake people store keeps.
+        TextManager
+            .Setup(manager => manager.GetTitles(It.IsAny<MetadataGuid>(), It.IsAny<TextFilteringOptions?>()))
+            .Returns((MetadataGuid id, TextFilteringOptions? _) => Stores.People.GetCharacter(id)?.Titles ?? []);
+        TextManager
+            .Setup(manager => manager.GetOverviews(It.IsAny<MetadataGuid>(), It.IsAny<TextFilteringOptions?>()))
+            .Returns((MetadataGuid id, TextFilteringOptions? _) => Stores.People.GetCharacter(id)?.Overviews ?? []);
 
         var collection = new ServiceCollection();
         collection.AddLogging();
@@ -74,6 +82,7 @@ internal sealed class ServiceHarness : IDisposable
         collection.AddSingleton(MetadataService.Object);
         collection.AddSingleton(ProviderManager.Object);
         collection.AddSingleton(ImageManager.Object);
+        collection.AddSingleton(TextManager.Object);
         collection.AddSingleton(AiringScheduleService.Object);
         collection.AddSingleton(RefreshService.Object);
         collection.AddSingleton(PurgeService.Object);
@@ -106,6 +115,8 @@ internal sealed class ServiceHarness : IDisposable
     public Mock<IMetadataProviderManager> ProviderManager { get; } = new();
 
     public Mock<IImageManager> ImageManager { get; } = new();
+
+    public Mock<IMetadataTextManager> TextManager { get; } = new();
 
     public Mock<IAiringScheduleService> AiringScheduleService { get; } = new();
 

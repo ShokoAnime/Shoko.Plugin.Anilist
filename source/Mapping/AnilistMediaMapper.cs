@@ -825,7 +825,8 @@ public static partial class AnilistMediaMapper
     /// </summary>
     /// <param name="page">The <c>characters</c> node.</param>
     /// <param name="people">Where the characters, people, credits and portraits are gathered.</param>
-    public static void ReadCharacterPage(JsonNode? page, AnilistPeople people)
+    /// <param name="originalLanguageCode">The anime's original language, which a character's native name in Han characters is taken to be in.</param>
+    public static void ReadCharacterPage(JsonNode? page, AnilistPeople people, string? originalLanguageCode)
     {
         ArgumentNullException.ThrowIfNull(people);
 
@@ -834,7 +835,7 @@ public static partial class AnilistMediaMapper
 
         foreach (var edge in edges)
         {
-            if (edge is null || ReadCharacterNode(edge["node"], people) is not { } character)
+            if (edge is null || ReadCharacterNode(edge["node"], people, originalLanguageCode) is not { } character)
                 continue;
 
             var name = MainName(character.Titles);
@@ -921,15 +922,16 @@ public static partial class AnilistMediaMapper
     /// </summary>
     /// <param name="node">The <c>Character</c> node, from an anime's characters or AniList's own <c>Character</c> query.</param>
     /// <param name="people">Where the characters and portraits are gathered.</param>
+    /// <param name="mediaLanguageCode">The original language of the anime the character is read from, or <c>null</c> when unknown.</param>
     /// <returns>The character, or <see langword="null"/> for a node without an ID.</returns>
-    public static MetadataCharacterData? ReadCharacterNode(JsonNode? node, AnilistPeople people)
+    public static MetadataCharacterData? ReadCharacterNode(JsonNode? node, AnilistPeople people, string? mediaLanguageCode)
     {
         ArgumentNullException.ThrowIfNull(people);
 
         if (node is null || GetInt(node["id"]) is not { } characterID || characterID is 0)
             return null;
 
-        var character = ReadCharacter(characterID, node);
+        var character = ReadCharacter(characterID, node, mediaLanguageCode);
         people.Characters[characterID] = character;
         AddPortrait(people, character.ID, node);
         return character;
@@ -968,13 +970,13 @@ public static partial class AnilistMediaMapper
             _ => PersonGender.Unknown,
         };
 
-    private static MetadataCharacterData ReadCharacter(int characterID, JsonNode node)
+    private static MetadataCharacterData ReadCharacter(int characterID, JsonNode node, string? mediaLanguageCode)
     {
         var id = AnilistUtility.FormatID(characterID);
         var name = GetString(node["name"]?["full"])?.Trim() ?? string.Empty;
         var native = GetString(node["name"]?["native"])?.Trim() is { Length: > 0 } nativeName ? nativeName : null;
-        // AniList gives a character no language, so the native name's script tells it where it can.
-        var languageCode = AnilistUtility.GuessScriptLanguage(native);
+        // AniList gives a character no language: the native name's script tells it where it can, else the anime's.
+        var languageCode = AnilistUtility.GuessCharacterLanguage(native, mediaLanguageCode);
         return new()
         {
             ID = AnilistUtility.Guid(MetadataEntityType.Character, characterID),
@@ -1011,6 +1013,22 @@ public static partial class AnilistMediaMapper
             DefaultImageResourceIDs = PortraitDefault(node),
         };
     }
+
+    /// <summary>
+    /// A stored character's or person's titles with the native name, stored
+    /// without a language, in the one now known, and the full name in the
+    /// transcription that goes with it; the rest stay as they are.
+    /// </summary>
+    /// <param name="titles">The AniList titles as stored.</param>
+    /// <param name="languageCode">The native name's language.</param>
+    /// <returns>The titles, in the same order.</returns>
+    public static List<ITitle> RelabelNativeName(IEnumerable<ITitle> titles, string languageCode)
+        => [.. titles.Select(title => title.Type switch
+        {
+            TitleType.Official when title.Language is TitleLanguage.Unknown => Title(title.Value, languageCode, TitleType.Official),
+            TitleType.Main => Title(title.Value, AnilistUtility.GetFullNameTranscription(languageCode, true)?.GetString(), TitleType.Main),
+            _ => title,
+        })];
 
     /// <summary>
     /// A character's or person's names: the full name as the main title, in

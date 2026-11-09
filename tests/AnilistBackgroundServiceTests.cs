@@ -1,5 +1,6 @@
 using Moq;
 using Shoko.Abstractions.Metadata;
+using Shoko.Abstractions.Metadata.Storage;
 using Shoko.Abstractions.Metadata.Providers;
 using Shoko.Plugin.Anilist.Actions;
 using Shoko.Plugin.Anilist.Mapping;
@@ -41,6 +42,38 @@ public class AnilistBackgroundServiceTests
         Assert.Equal(0, await harness.Get<AnilistBackgroundService>().RefreshIfNothingStored(TestContext.Current.CancellationToken));
 
         harness.RefreshService.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public void RelabelCharacterNativeNames_LabelsUnlabelledHanNames_ByTheirAnime()
+    {
+        using var harness = new ServiceHarness();
+        var stores = harness.Stores;
+        var chinese = new AnilistMedia { ID = 30, MainTitle = "Chinese", OriginalLanguageCode = "zh" };
+        stores.Series.SaveSeries(AnilistMediaMapper.ToSeriesData(chinese, []));
+        // As stored before: the Han name without a language, the full name in romaji.
+        var unlabelled = Character(1, "Li Bai", "李白", null);
+        var uncredited = Character(2, "Du Fu", "杜甫", null);
+        var labelled = Character(3, "Luffy Monkey", "モンキー・D・ルフィ", "ja");
+        stores.People.SaveCharacters([unlabelled, uncredited, labelled]);
+        stores.People.SetCast(AnilistUtility.SeriesGuid(30), [new() { CharacterID = unlabelled.ID, Name = "Li Bai" }, new() { CharacterID = labelled.ID, Name = "Luffy Monkey" }]);
+        var background = harness.Get<AnilistBackgroundService>();
+
+        Assert.Equal(1, background.RelabelCharacterNativeNames());
+        Assert.Equal(0, background.RelabelCharacterNativeNames());
+
+        var relabelled = stores.People.GetCharacter(unlabelled.ID)!;
+        Assert.Equal("zh", relabelled.OriginalLanguageCode);
+        Assert.Equal([("Li Bai", "x-zht"), ("李白", "zh")], relabelled.Titles.Select(title => (title.Value, title.LanguageCode)));
+        Assert.Equal(unlabelled.Resources, relabelled.Resources);
+        Assert.Null(stores.People.GetCharacter(uncredited.ID)!.OriginalLanguageCode);
+    }
+
+    private static MetadataCharacterData Character(int id, string name, string native, string? languageCode)
+    {
+        var people = new AnilistPeople();
+        var node = System.Text.Json.Nodes.JsonNode.Parse($$"""{ "id": {{id}}, "name": { "full": "{{name}}", "native": "{{native}}" } }""");
+        return AnilistMediaMapper.ReadCharacterNode(node, people, languageCode)!;
     }
 
     [Fact]
