@@ -5,9 +5,36 @@
   "authors": "Shoko Team",
   "repository_url": "https://github.com/ShokoAnime/Shoko.Plugin.Anilist",
   "tags": [
+    "metadata-provider",
+    "metadata-auto-linker",
+    "metadata-series-linker",
+    "suspension-provider",
+    "airing-scheduler",
     "service-registration"
   ],
+  "thumbnail_url": "https://raw.githubusercontent.com/ShokoAnime/Shoko.Plugin.Anilist/stable/source/Assets/thumbnail.svg",
+  "icon_url": "https://raw.githubusercontent.com/ShokoAnime/Shoko.Plugin.Anilist/stable/source/Assets/icon.svg",
+  "is_meta": false,
   "releases": [
+    {
+      "version": "1.5.1",
+      "tag": "v1.5.1",
+      "released_at": "2026-11-15T15:20:26.3176383Z",
+      "channel": "Stable",
+      "release_notes": "- Added settings to switch off downloading cast and crew, relations and recommendations. A full refresh clears what was stored while a switch is off.\n- Characters\u0027 native names are now labelled by their anime\u0027s language.\n- Rewrote the README.\n\nRequires Shoko Server with \u0060Shoko.Abstractions\u0060 \u00606.0.0-alpha.131\u0060.",
+      "is_meta": false,
+      "dependencies": [],
+      "archives": [
+        {
+          "runtime": "any",
+          "abstraction": "6.0.0",
+          "url": "https://github.com/ShokoAnime/Shoko.Plugin.Anilist/releases/download/v1.5.1/AniList-v1.5.1-any.zip",
+          "checksum": "sha256:8eb31e2bbec44fce73ce7079cb68cce25699c77d533514606ce461835fe0dd43",
+          "packed_size": 218097,
+          "unpacked_size": 706612
+        }
+      ]
+    },
     {
       "version": "1.5.0",
       "tag": "v1.5.0",
@@ -136,7 +163,5 @@
         }
       ]
     }
-  ],
-  "thumbnail_url": "https://raw.githubusercontent.com/ShokoAnime/Shoko.Plugin.Anilist/stable/source/Assets/thumbnail.svg",
-  "icon_url": "https://raw.githubusercontent.com/ShokoAnime/Shoko.Plugin.Anilist/stable/source/Assets/icon.svg"
+  ]
 }
