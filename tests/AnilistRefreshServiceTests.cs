@@ -270,6 +270,64 @@ public class AnilistRefreshServiceTests
         Assert.False(harness.Stores.People.Cast.ContainsKey(_series));
     }
 
+    [Theory]
+    [InlineData(nameof(AnilistConfiguration.DownloadCastAndCrew), "characters(")]
+    [InlineData(nameof(AnilistConfiguration.DownloadRelations), "relations {")]
+    [InlineData(nameof(AnilistConfiguration.DownloadRecommendations), "recommendations(")]
+    public async Task RefreshAnime_WithADownloadSwitchedOff_AsksForNoneOfIt_AndClearsWhatIsStored(string setting, string section)
+    {
+        using var harness = new ServiceHarness(Unthrottled()).Respond(_media).Respond(_media);
+        var refresh = harness.Get<AnilistRefreshService>();
+        await refresh.RefreshAnime(21, new(), TestContext.Current.CancellationToken);
+        typeof(AnilistConfiguration).GetProperty(setting)!.SetValue(harness.Stores.Configuration, false);
+
+        await refresh.RefreshAnime(21, new(), TestContext.Current.CancellationToken);
+
+        Assert.Contains(section, harness.Http.Bodies[0], StringComparison.Ordinal);
+        Assert.DoesNotContain(section, harness.Http.Bodies[1], StringComparison.Ordinal);
+        var stores = harness.Stores;
+        var castAndCrew = setting is nameof(AnilistConfiguration.DownloadCastAndCrew);
+        var relations = setting is nameof(AnilistConfiguration.DownloadRelations);
+        var recommendations = setting is nameof(AnilistConfiguration.DownloadRecommendations);
+        Assert.Equal(castAndCrew, stores.People.Cast[_series].Count is 0);
+        Assert.Equal(castAndCrew, stores.People.Crew[_series].Count is 0);
+        Assert.Equal(relations, stores.Relations.Entries[_series].Count is 0);
+        Assert.Equal(recommendations, stores.Suggestions.Entries[_series].Count is 0);
+        Assert.Equal(recommendations, stores.Store.GetAnime(21)!.Recommendations.Count is 0);
+    }
+
+    [Fact]
+    public async Task QuickRefresh_WithTheDownloadsSwitchedOff_KeepsWhatIsStored()
+    {
+        using var harness = new ServiceHarness(Unthrottled()).Respond(_media).Respond(_media);
+        var refresh = harness.Get<AnilistRefreshService>();
+        await refresh.RefreshAnime(21, new(), TestContext.Current.CancellationToken);
+        harness.Stores.Configuration.DownloadCastAndCrew = false;
+        harness.Stores.Configuration.DownloadRelations = false;
+        harness.Stores.Configuration.DownloadRecommendations = false;
+
+        await refresh.RefreshAnime(21, new() { QuickRefresh = true }, TestContext.Current.CancellationToken);
+
+        var stores = harness.Stores;
+        Assert.Equal(3, stores.People.Cast[_series].Count);
+        Assert.Equal(2, stores.People.Crew[_series].Count);
+        Assert.Equal(2, stores.Relations.Entries[_series].Count);
+        Assert.Equal(2, stores.Suggestions.Entries[_series].Count);
+        Assert.Equal(2, stores.Store.GetAnime(21)!.Recommendations.Count);
+    }
+
+    [Fact]
+    public async Task RefreshAnime_WithRecommendationsOff_MergesNoneFromTheOtherSide()
+    {
+        using var harness = new ServiceHarness(Unthrottled()).Respond(_media);
+        harness.Stores.Configuration.DownloadRecommendations = false;
+        harness.Stores.Store.SaveAnime(new() { ID = 1735, Recommendations = [new() { ID = 21, Score = 50 }] });
+
+        await harness.Get<AnilistRefreshService>().RefreshAnime(21, new(), TestContext.Current.CancellationToken);
+
+        Assert.Empty(harness.Stores.Suggestions.Entries[_series]);
+    }
+
     [Fact]
     public async Task RefreshAnime_KeepsWhatIsStored_WhenAnilistHasNoSuchAnime()
     {

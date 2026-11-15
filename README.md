@@ -57,7 +57,10 @@ You'll find the settings under Settings → Metadata, with the AniList provider.
 | Consider Existing Other Links | off | Leaves out AniList episodes another anime is already linked to when matching episodes. |
 | Auto-Search Candidate Count | `5` | How many search results (`1` to `20`) to score when linking. |
 | Purge Unlinked After (Days) | `14` | How long (`0` to `365` days) an anime nothing links to stays stored after its last refresh. `0` keeps it forever. |
-| Recommendation Depth | While well rated | How far down the recommendations to read: the first page only, while a page still ends well rated, or everything. |
+| Download Cast and Crew | on | Downloads the characters, their voice actors and the staff. Off, a full refresh clears them. |
+| Download Relations | on | Downloads the relations to other anime. Off, a full refresh clears them. |
+| Download Recommendations | on | Downloads AniList's recommendations. Off, a full refresh clears them. |
+| Recommendation Depth | While well rated | How far down the recommendations to read: the first page only, while a page still ends well rated, or everything. Only applies while recommendations are downloaded. |
 | Image CDN URL | none | A base URL, or a template with `{0}`, for AniList's image CDN. |
 | Max Requests Per Window | `1` | How many requests (`1` to `90`) may go out in one window. |
 | Window Duration (ms) | `4000` | How long one window lasts (`1000` to `120000`). |

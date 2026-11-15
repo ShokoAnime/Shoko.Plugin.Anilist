@@ -182,7 +182,7 @@ public sealed partial class AnilistSearchService
     /// <exception cref="AnilistApiException">AniList answered with something unexpected.</exception>
     /// <exception cref="AnilistUnavailableException">AniList cannot be reached for now.</exception>
     public async Task<AnilistSearchResult?> GetRemoteAnime(int anilistAnimeID, CancellationToken cancellationToken = default)
-        => await _apiClient.GetAnimeAsync(anilistAnimeID, cancellationToken).ConfigureAwait(false) is { } media ? new AnilistSearchResult(media) : null;
+        => await _apiClient.GetAnimeAsync(anilistAnimeID, AnilistAnimeParts.None, cancellationToken).ConfigureAwait(false) is { } media ? new AnilistSearchResult(media) : null;
 
     /// <summary>
     /// An anime the core's series store holds, in the shape a search hands out.

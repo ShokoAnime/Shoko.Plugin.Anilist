@@ -56,11 +56,15 @@ public sealed class AnilistRefreshService(
     /// refresh is quick, and writes it into the stores.
     /// </summary>
     /// <remarks>
-    /// The cast and crew past the first page are fetched only while the
-    /// provider's <c>character</c> and <c>creator</c> kinds are on. A quick
-    /// refresh leaves out the cast and crew and the matching of the linked
-    /// anime's episodes, and leaves the plugin's document looking newly
-    /// added. An anime AniList no longer has is left as it was stored.
+    /// The cast and crew, the relations and the recommendations are fetched
+    /// only while their download switches are on, and a full refresh clears
+    /// what is stored of a part switched off. The cast and crew past the
+    /// first page are fetched only while the provider's <c>character</c> and
+    /// <c>creator</c> kinds are on. A quick refresh leaves out the cast and
+    /// crew and the matching of the linked anime's episodes, keeps what is
+    /// stored of a part switched off, and leaves the plugin's document
+    /// looking newly added. An anime AniList no longer has is left as it was
+    /// stored.
     /// </remarks>
     /// <param name="anilistAnimeID">The AniList anime ID.</param>
     /// <param name="options">What kind of refresh it is.</param>
@@ -77,13 +81,16 @@ public sealed class AnilistRefreshService(
             return false;
 
         logger.LogInformation("Refreshing AniList anime {AnimeID}", anilistAnimeID);
-        if (await apiClient.GetAnimeAsync(anilistAnimeID, cancellationToken).ConfigureAwait(false) is not { } node)
+        var configuration = configurationProvider.Load();
+        var parts = PartsToDownload(configuration);
+        // A quick refresh writes no cast or crew, so it asks for none.
+        var partsToAsk = options.QuickRefresh ? parts & ~AnilistAnimeParts.CastAndCrew : parts;
+        if (await apiClient.GetAnimeAsync(anilistAnimeID, partsToAsk, cancellationToken).ConfigureAwait(false) is not { } node)
         {
             logger.LogWarning("AniList has no anime with ID {AnimeID}. Keeping what is stored.", anilistAnimeID);
             return false;
         }
 
-        var configuration = configurationProvider.Load();
         var now = DateTime.UtcNow;
         var media = AnilistMediaMapper.ReadMedia(node);
         var seriesID = AnilistUtility.SeriesGuid(anilistAnimeID);
@@ -93,12 +100,18 @@ public sealed class AnilistRefreshService(
         var existingEpisodes = store.GetEpisodesForAnime(anilistAnimeID);
         var (episodes, episodesChanged) = AnilistMediaMapper.BuildEpisodes(media, schedule, existingEpisodes, now);
         var changes = store.Series.SaveSeries(AnilistMediaMapper.ToSeriesData(media, episodes));
-        var suggestions = await ReadSuggestions(anilistAnimeID, node, configuration.RecommendationDepth, cancellationToken).ConfigureAwait(false);
-        var document = AnilistMediaMapper.ToStoredAnime(media, store.GetAnime(anilistAnimeID), now, options.QuickRefresh);
-        document.Recommendations = [.. suggestions
-            .Select(suggestion => (Suggestion: suggestion, ID: AnilistUtility.TryGetID(suggestion.SuggestedID, MetadataEntityType.Series, out var id) ? id : 0))
-            .Where(pair => pair.ID > 0)
-            .Select(pair => new AnilistStoredRecommendation { ID = pair.ID, Score = pair.Suggestion.Score })];
+        var recommendations = parts.HasFlag(AnilistAnimeParts.Recommendations);
+        var suggestions = recommendations
+            ? await ReadSuggestions(anilistAnimeID, node, configuration.RecommendationDepth, cancellationToken).ConfigureAwait(false)
+            : [];
+        var existingDocument = store.GetAnime(anilistAnimeID);
+        var document = AnilistMediaMapper.ToStoredAnime(media, existingDocument, now, options.QuickRefresh);
+        document.Recommendations = recommendations || !options.QuickRefresh
+            ? [.. suggestions
+                .Select(suggestion => (Suggestion: suggestion, ID: AnilistUtility.TryGetID(suggestion.SuggestedID, MetadataEntityType.Series, out var id) ? id : 0))
+                .Where(pair => pair.ID > 0)
+                .Select(pair => new AnilistStoredRecommendation { ID = pair.ID, Score = pair.Suggestion.Score })]
+            : existingDocument?.Recommendations ?? [];
         store.SaveAnime(document);
         store.ReplaceEpisodes(anilistAnimeID, episodes);
         if (episodesChanged)
@@ -112,10 +125,29 @@ public sealed class AnilistRefreshService(
         var (studios, entryStudios) = AnilistMediaMapper.ReadStudios(node);
         store.Studios.SaveStudios(studios);
         store.Studios.SetStudios(seriesID, entryStudios);
-        store.Relations.SetRelations(seriesID, AnilistMediaMapper.ReadRelations(node));
-        store.Suggestions.SetSuggestions(seriesID, AnilistMediaMapper.MergeSuggestions(anilistAnimeID, suggestions, ReverseSuggestions(anilistAnimeID)));
+        // A part switched off is not in the node; a full refresh clears it, a quick one keeps it.
+        if (parts.HasFlag(AnilistAnimeParts.Relations))
+            store.Relations.SetRelations(seriesID, AnilistMediaMapper.ReadRelations(node));
+        else if (!options.QuickRefresh)
+            store.Relations.SetRelations(seriesID, []);
+
+        if (recommendations)
+            store.Suggestions.SetSuggestions(seriesID, AnilistMediaMapper.MergeSuggestions(anilistAnimeID, suggestions, ReverseSuggestions(anilistAnimeID)));
+        else if (!options.QuickRefresh)
+            store.Suggestions.SetSuggestions(seriesID, []);
+
         if (!options.QuickRefresh)
-            await UpdatePeople(media, node, cancellationToken).ConfigureAwait(false);
+        {
+            if (parts.HasFlag(AnilistAnimeParts.CastAndCrew))
+            {
+                await UpdatePeople(media, node, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                store.People.SetCast(seriesID, []);
+                store.People.SetCrew(seriesID, []);
+            }
+        }
 
         // The broadcast times, and the links of the anime linked to it.
         if (store.GetSeries(anilistAnimeID) is { } series)
@@ -180,6 +212,11 @@ public sealed class AnilistRefreshService(
         logger.LogDebug("Refreshed AniList entry {EntityID}.", entityID);
         return true;
     }
+
+    private static AnilistAnimeParts PartsToDownload(AnilistConfiguration configuration)
+        => (configuration.DownloadCastAndCrew ? AnilistAnimeParts.CastAndCrew : AnilistAnimeParts.None)
+            | (configuration.DownloadRelations ? AnilistAnimeParts.Relations : AnilistAnimeParts.None)
+            | (configuration.DownloadRecommendations ? AnilistAnimeParts.Recommendations : AnilistAnimeParts.None);
 
     private async Task<Dictionary<int, AnilistScheduleEntry>> ReadSchedule(int anilistAnimeID, JsonNode media, CancellationToken cancellationToken)
     {

@@ -58,8 +58,36 @@ public class AnilistConfiguration : IMetadataProviderConfiguration, IPluginConfi
     #region Downloads
 
     /// <summary>
-    /// How far down AniList's recommendations to read. The first page costs
-    /// nothing extra; the other two spend requests on weaker entries.
+    /// Whether a refresh downloads the anime's characters, with their voice
+    /// actors, and its staff. Turned off, they are not asked for, and a full
+    /// refresh clears the stored cast and crew.
+    /// </summary>
+    [Display(Name = "Download Cast and Crew")]
+    [DefaultValue(true)]
+    public bool DownloadCastAndCrew { get; set; } = true;
+
+    /// <summary>
+    /// Whether a refresh downloads the anime's relations to other anime.
+    /// Turned off, they are not asked for, and a full refresh clears the
+    /// stored relations.
+    /// </summary>
+    [Display(Name = "Download Relations")]
+    [DefaultValue(true)]
+    public bool DownloadRelations { get; set; } = true;
+
+    /// <summary>
+    /// Whether a refresh downloads AniList's recommendations. Turned off,
+    /// they are not asked for, and a full refresh clears the stored ones,
+    /// those merged in from other anime included.
+    /// </summary>
+    [Display(Name = "Download Recommendations")]
+    [DefaultValue(true)]
+    public bool DownloadRecommendations { get; set; } = true;
+
+    /// <summary>
+    /// How far down AniList's recommendations to read, while they are
+    /// downloaded. The first page costs nothing extra; the other two spend
+    /// requests on weaker entries.
     /// </summary>
     [Display(Name = "Recommendation Depth")]
     [DefaultValue(AnilistRecommendationDepth.WhileWellRated)]

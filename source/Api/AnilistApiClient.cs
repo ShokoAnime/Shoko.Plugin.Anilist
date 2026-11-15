@@ -164,39 +164,20 @@ public class AnilistApiClient(HttpClient httpClient, AnilistRateLimiter rateLimi
         }
         """;
 
-    /// <summary>
-    /// Everything about an anime in one round trip: the metadata, the first
-    /// page of the schedule, recommendations, characters and staff, and the
-    /// tags, studios and relations, which are not paged.
-    /// </summary>
-    private static readonly string _animeQuery = $$"""
-        query ($id: Int, $schedulePage: Int, $recommendationPage: Int, $characterPage: Int, $staffPage: Int) {
-          Media(id: $id, type: ANIME) {
-            ...MediaFields
-            {{SchedulePage}}
-            studios(sort: [ID]) {
-              edges {
-                isMain
-                node { ...StudioFields }
-              }
-            }
-            tags { id name category description isAdult isGeneralSpoiler isMediaSpoiler rank }
-            relations {
-              edges {
-                relationType(version: 2)
-                node { id type format countryOfOrigin title { romaji } }
-              }
-            }
-            {{RecommendationsPage}}
-            {{CharactersPage}}
-            {{StaffPage}}
+    private const string RelationsBlock = """
+        relations {
+          edges {
+            relationType(version: 2)
+            node { id type format countryOfOrigin title { romaji } }
           }
         }
-        {{MediaFragment}}
-        {{StudioFragment}}
-        {{CharacterFragment}}
-        {{StaffFragment}}
         """;
+
+    /// <summary>
+    /// The anime query for each combination of <see cref="AnilistAnimeParts"/>,
+    /// indexed by the flags.
+    /// </summary>
+    private static readonly string[] _animeQueries = [.. Enumerable.Range(0, (int)AnilistAnimeParts.All + 1).Select(parts => BuildAnimeQuery((AnilistAnimeParts)parts))];
 
     private static readonly string _airingScheduleQuery = $$"""
         query ($id: Int, $schedulePage: Int) {
@@ -276,21 +257,110 @@ public class AnilistApiClient(HttpClient httpClient, AnilistRateLimiter rateLimi
         {{StudioFragment}}
         """;
 
+    /// <summary>
+    /// The anime query asking for the given parts.
+    /// </summary>
+    /// <param name="parts">The parts to ask for.</param>
+    /// <returns>The query.</returns>
+    internal static string GetAnimeQuery(AnilistAnimeParts parts)
+        => _animeQueries[(int)(parts & AnilistAnimeParts.All)];
+
+    // Everything about an anime in one round trip: the metadata, the first
+    // page of the schedule and of each paged part asked for, and the tags,
+    // studios and relations, which are not paged. GraphQL refuses a variable
+    // or fragment nothing uses, so each goes in only with its part.
+    private static string BuildAnimeQuery(AnilistAnimeParts parts)
+    {
+        var castAndCrew = parts.HasFlag(AnilistAnimeParts.CastAndCrew);
+        var relations = parts.HasFlag(AnilistAnimeParts.Relations);
+        var recommendations = parts.HasFlag(AnilistAnimeParts.Recommendations);
+        var declarations = new List<string> { "$id: Int", "$schedulePage: Int" };
+        var fields = new List<string>
+        {
+            "...MediaFields",
+            SchedulePage,
+            """
+            studios(sort: [ID]) {
+              edges {
+                isMain
+                node { ...StudioFields }
+              }
+            }
+            """,
+            "tags { id name category description isAdult isGeneralSpoiler isMediaSpoiler rank }",
+        };
+        var fragments = new List<string> { MediaFragment, StudioFragment };
+        if (relations)
+            fields.Add(RelationsBlock);
+
+        if (recommendations)
+        {
+            declarations.Add("$recommendationPage: Int");
+            fields.Add(RecommendationsPage);
+        }
+
+        if (castAndCrew)
+        {
+            declarations.Add("$characterPage: Int");
+            declarations.Add("$staffPage: Int");
+            fields.Add(CharactersPage);
+            fields.Add(StaffPage);
+            fragments.Add(CharacterFragment);
+            fragments.Add(StaffFragment);
+        }
+
+        return $$"""
+            query ({{string.Join(", ", declarations)}}) {
+              Media(id: $id, type: ANIME) {
+            {{string.Join("\n", fields)}}
+              }
+            }
+            {{string.Join("\n", fragments)}}
+            """;
+    }
+
+    /// <summary>
+    /// The variables for the anime query asking for the given parts.
+    /// </summary>
+    /// <param name="anilistAnimeID">The AniList anime ID.</param>
+    /// <param name="parts">The parts to ask for.</param>
+    /// <returns>The variables, exactly those the query declares.</returns>
+    internal static Dictionary<string, object?> GetAnimeVariables(int anilistAnimeID, AnilistAnimeParts parts)
+    {
+        var variables = new Dictionary<string, object?> { ["id"] = anilistAnimeID, ["schedulePage"] = 1 };
+        if (parts.HasFlag(AnilistAnimeParts.Recommendations))
+            variables["recommendationPage"] = 1;
+
+        if (parts.HasFlag(AnilistAnimeParts.CastAndCrew))
+        {
+            variables["characterPage"] = 1;
+            variables["staffPage"] = 1;
+        }
+
+        return variables;
+    }
+
     #endregion
 
     #region Queries
 
     /// <summary>
-    /// Fetches an anime, with the first page of its schedule, recommendations,
-    /// characters and staff.
+    /// Fetches an anime, with the first page of its schedule, its tags and
+    /// studios, and the parts asked for: the first page of its
+    /// recommendations, characters and staff, and its relations.
     /// </summary>
+    /// <remarks>
+    /// A part not asked for is missing from the node, which says nothing
+    /// about whether AniList has any.
+    /// </remarks>
     /// <param name="anilistAnimeID">The AniList anime ID.</param>
+    /// <param name="parts">The parts to ask for.</param>
     /// <param name="cancellationToken">Cancels the request.</param>
     /// <returns>The <c>Media</c> node, or <see langword="null"/> when AniList has no such anime.</returns>
     /// <exception cref="AnilistApiException">AniList answered with something unexpected.</exception>
     /// <exception cref="AnilistUnavailableException">AniList cannot be reached for now.</exception>
-    public Task<JsonNode?> GetAnimeAsync(int anilistAnimeID, CancellationToken cancellationToken = default)
-        => ExecuteAndSelectAsync(_animeQuery, new() { ["id"] = anilistAnimeID, ["schedulePage"] = 1, ["recommendationPage"] = 1, ["characterPage"] = 1, ["staffPage"] = 1 }, "Media", $"Get anime {anilistAnimeID}", cancellationToken);
+    public Task<JsonNode?> GetAnimeAsync(int anilistAnimeID, AnilistAnimeParts parts, CancellationToken cancellationToken = default)
+        => ExecuteAndSelectAsync(GetAnimeQuery(parts), GetAnimeVariables(anilistAnimeID, parts), "Media", $"Get anime {anilistAnimeID}", cancellationToken);
 
     /// <summary>
     /// Fetches one page of an anime's airing schedule.

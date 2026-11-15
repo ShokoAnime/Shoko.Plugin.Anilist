@@ -506,7 +506,7 @@ public class AnilistSearchServiceTests
             .Respond(Fixture.Read("media-21.json"));
 
         var (page, _) = await harness.Get<AnilistSearchService>().SearchAnime(new() { Query = "Airing" }, TestContext.Current.CancellationToken);
-        await harness.Get<AnilistApiClient>().GetAnimeAsync(21, TestContext.Current.CancellationToken);
+        await harness.Get<AnilistApiClient>().GetAnimeAsync(21, AnilistAnimeParts.All, TestContext.Current.CancellationToken);
 
         var anime = Assert.Single(page).Anime;
         Assert.Equal(5, anime.NextEpisodeNumber);
