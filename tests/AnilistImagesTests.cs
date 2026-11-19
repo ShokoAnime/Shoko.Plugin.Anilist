@@ -21,6 +21,21 @@ public class AnilistImagesTests
     public void ToResourceID_EmptyUrl_ReturnsNull(string? url)
         => Assert.Null(AnilistImages.ToResourceID(url));
 
+    [Theory]
+    [InlineData("https://s4.anilist.co/file/anilistcdn/staff/large/default.jpg")]
+    [InlineData("https://s4.anilist.co/file/anilistcdn/character/large/default.jpg")]
+    [InlineData("https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/default.jpg")]
+    public void ToResourceID_Placeholder_ReturnsNull(string url)
+        => Assert.Null(AnilistImages.ToResourceID(url));
+
+    [Theory]
+    [InlineData("staff/large/default.jpg", true)]
+    [InlineData("character/medium/DEFAULT.png", true)]
+    [InlineData("staff/large/n95185-default.jpg", false)]
+    [InlineData("media/anime/cover/large/bx21-default.jpg", false)]
+    public void IsPlaceholder_MatchesOnlyTheDefaultFile(string resourceID, bool expected)
+        => Assert.Equal(expected, AnilistImages.IsPlaceholder(resourceID));
+
     [Fact]
     public void ToResourceID_UnknownHost_KeepsTheFullUrl()
         => Assert.Equal("https://example.org/image.png", AnilistImages.ToResourceID("https://example.org/image.png"));

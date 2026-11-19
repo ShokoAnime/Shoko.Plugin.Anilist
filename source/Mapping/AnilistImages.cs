@@ -43,7 +43,8 @@ public static class AnilistImages
     /// <param name="url">The URL, or <see langword="null"/>.</param>
     /// <returns>
     /// The path after the CDN base, the whole URL when it is not on the CDN,
-    /// or <see langword="null"/> when there was no URL.
+    /// or <see langword="null"/> when there was no URL or it is one of
+    /// AniList's placeholders (<see cref="IsPlaceholder"/>).
     /// </returns>
     public static string? ToResourceID(string? url)
     {
@@ -58,7 +59,25 @@ public static class AnilistImages
         if (!string.Equals(baseUrl, _imageServerUrl, StringComparison.Ordinal))
             _imageServerUrl = baseUrl;
 
-        return url[(index + CdnPathMarker.Length)..];
+        var resourceID = url[(index + CdnPathMarker.Length)..];
+        return IsPlaceholder(resourceID) ? null : resourceID;
+    }
+
+    /// <summary>
+    /// Checks whether a resource ID is one of the placeholders AniList hands
+    /// out for an entry without a picture, such as
+    /// <c>staff/large/default.jpg</c>: one file per kind and size, which every
+    /// such entry would otherwise share as its image.
+    /// </summary>
+    /// <param name="resourceID">The resource ID.</param>
+    /// <returns><see langword="true"/> for a placeholder.</returns>
+    public static bool IsPlaceholder(string? resourceID)
+    {
+        if (string.IsNullOrEmpty(resourceID))
+            return false;
+
+        var name = resourceID[(resourceID.LastIndexOf('/') + 1)..];
+        return name.StartsWith("default.", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>

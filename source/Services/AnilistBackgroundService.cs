@@ -30,6 +30,7 @@ namespace Shoko.Plugin.Anilist.Services;
 /// </remarks>
 /// <param name="systemService">The core's system service, for when the server has started.</param>
 /// <param name="imageService">Registers the image template.</param>
+/// <param name="imageManager">The image manager, to purge the placeholder images.</param>
 /// <param name="seriesStore">The core's series store, asked whether anything is stored.</param>
 /// <param name="store">The stores, for the characters and the anime they appear in.</param>
 /// <param name="textManager">The core's text manager, for the characters' stored titles and overviews.</param>
@@ -41,6 +42,7 @@ namespace Shoko.Plugin.Anilist.Services;
 public sealed class AnilistBackgroundService(
     ISystemService systemService,
     AnilistImageService imageService,
+    IImageManager imageManager,
     IMetadataSeriesStore seriesStore,
     AnilistStore store,
     IMetadataTextManager textManager,
@@ -74,6 +76,7 @@ public sealed class AnilistBackgroundService(
         }
 
         await WaitForStart(stoppingToken).ConfigureAwait(false);
+        await PurgePlaceholderImages().ConfigureAwait(false);
         RelabelCharacterNativeNames();
         await RefreshIfNothingStored(stoppingToken).ConfigureAwait(false);
 
@@ -109,6 +112,39 @@ public sealed class AnilistBackgroundService(
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             logger.LogWarning(ex, "Unable to refresh the linked AniList anime.");
+            return 0;
+        }
+    }
+
+    /// <summary>
+    /// Purges the AniList images that are its placeholders for an entry
+    /// without a picture, such as <c>staff/large/default.jpg</c>, with every
+    /// link to them. Earlier versions stored them as real images, one shared
+    /// by every such person, character or anime. Runs on every start, which
+    /// finds none once they are gone.
+    /// </summary>
+    /// <returns>How many images were purged.</returns>
+    public async Task<int> PurgePlaceholderImages()
+    {
+        try
+        {
+            var placeholders = imageManager.GetAllImages(new() { ImageSource = MetadataSource.AniList })
+                .Where(image => AnilistImages.IsPlaceholder(image.ResourceID))
+                .ToList();
+            var purged = 0;
+            foreach (var image in placeholders)
+            {
+                if (await imageManager.PurgeImage(image).ConfigureAwait(false))
+                    purged++;
+            }
+
+            if (purged > 0)
+                logger.LogInformation("Purged {Count} AniList placeholder images and their links.", purged);
+            return purged;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Unable to purge the AniList placeholder images.");
             return 0;
         }
     }
