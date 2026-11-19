@@ -17,6 +17,25 @@
   "is_meta": false,
   "releases": [
     {
+      "version": "1.5.2",
+      "tag": "v1.5.2",
+      "released_at": "2026-11-19T21:42:48.2822351Z",
+      "channel": "Stable",
+      "release_notes": "- AniList\u0027s placeholder pictures (the \u0060default.jpg\u0060 it hands out for a person, character or anime without one) are no longer stored as images. Earlier versions linked that one file to every such entry, tens of thousands on a large library, which made reading cast and crew slow.\n- The placeholders already stored are removed, with their links, the next time the server starts.\n\nRequires Shoko Server with \u0060Shoko.Abstractions\u0060 \u00606.0.0-alpha.131\u0060.",
+      "is_meta": false,
+      "dependencies": [],
+      "archives": [
+        {
+          "runtime": "any",
+          "abstraction": "6.0.0",
+          "url": "https://github.com/ShokoAnime/Shoko.Plugin.Anilist/releases/download/v1.5.2/AniList-v1.5.2-any.zip",
+          "checksum": "sha256:c6afb5cae0074b60f82c68a5a22280148fcd2f75ab4d8f279a8eab9e3407145f",
+          "packed_size": 219208,
+          "unpacked_size": 710107
+        }
+      ]
+    },
+    {
       "version": "1.5.1",
       "tag": "v1.5.1",
       "released_at": "2026-11-15T15:20:26.3176383Z",
