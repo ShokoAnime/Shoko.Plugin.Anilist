@@ -17,6 +17,25 @@
   "is_meta": false,
   "releases": [
     {
+      "version": "1.5.3",
+      "tag": "v1.5.3",
+      "released_at": "2026-11-27T20:12:08.2703713Z",
+      "channel": "Stable",
+      "release_notes": "Built for the stable \u0060Shoko.Abstractions\u0060 \u00606.0.0\u0060 of Shoko Server 6.0.0. No other changes.\n\nRequires Shoko Server with \u0060Shoko.Abstractions\u0060 \u00606.0.0\u0060.",
+      "is_meta": false,
+      "dependencies": [],
+      "archives": [
+        {
+          "runtime": "any",
+          "abstraction": "6.0.0",
+          "url": "https://github.com/ShokoAnime/Shoko.Plugin.Anilist/releases/download/v1.5.3/AniList-v1.5.3-any.zip",
+          "checksum": "sha256:13e0fb7529cfb247f13f01b655625ae8564043840c6a72630b2d2781cb3e6e6d",
+          "packed_size": 219206,
+          "unpacked_size": 710107
+        }
+      ]
+    },
+    {
       "version": "1.5.2",
       "tag": "v1.5.2",
       "released_at": "2026-11-19T21:42:48.2822351Z",
